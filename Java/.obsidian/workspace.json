@@ -105,13 +105,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MySQL是怎样运行的/redo log.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "redo log 的大纲"
+              "title": "大纲"
             }
           },
           {
@@ -124,7 +123,8 @@
               "title": "Source Control"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -141,8 +141,9 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "73b8f4631bbf517d",
+  "active": "29c88ce00bfa2ebb",
   "lastOpenFiles": [
+    "MySQL是怎样运行的/redo log.md",
     "Vmare.md",
     "实习日记",
     "Linux常用指令.md",
@@ -154,7 +155,6 @@
     "MySQL是怎样运行的/undo log.md",
     "MySQL是怎样运行的/查询重写.md",
     "MySQL是怎样运行的/事务.md",
-    "MySQL是怎样运行的/redo log.md",
     "MySQL是怎样运行的/InnoDB的Buffer.md",
     "MySQL是怎样运行的/子查询语法.md",
     "MySQL是怎样运行的/Explain详解.md",
