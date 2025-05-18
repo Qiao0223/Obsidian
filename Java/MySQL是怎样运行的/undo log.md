@@ -116,3 +116,81 @@ INSERT INTO undo_demo(id, key1, col) VALUES (1, 'AWM', '狙击枪'), (2, 'M416',
 #### 特别注意
 - 由于主键变化导致记录位置在聚簇索引中需重新定位
 - 形成 **2 条 undo 日志**：`DEL_MARK` + `INSERT`
+# 4. Undo 页面结构（FIL_PAGE_UNDO_LOG）
+## 4.1. Undo 页面结构（FIL_PAGE_UNDO_LOG）
+
+### 页面分类（16KB页）
+- 用于存储 Undo 日志的专用页
+- 页面类型标记为：`FIL_PAGE_UNDO_LOG`
+
+### 页面结构
+
+|区域|说明|
+|---|---|
+|`File Header`|通用页头（页号、LSN等）|
+|`Undo Page Header`|**Undo 特有字段**，包括页内日志写入偏移和链表连接信息|
+|`File Trailer`|页尾校验信息|
+
+### Undo Page Header 字段
+
+| 字段名                   | 说明                                                                                                                                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRX_UNDO_PAGE_TYPE`  | 页内 Undo 日志的大类类型（INSERT or UPDATE）  <br>- `1` = TRX_UNDO_INSERT（只放 INSERT 类型）  <br>- `2` = TRX_UNDO_UPDATE（DELETE、UPDATE 等）  <br>**不同类型不能混写** |
+| `TRX_UNDO_PAGE_START` | 第一条 Undo 日志起始偏移位置                                                                                                                            |
+| `TRX_UNDO_PAGE_FREE`  | 最后一条 Undo 日志结束偏移位置（即下次写入位置）                                                                                                                  |
+| `TRX_UNDO_PAGE_NODE`  | 当前页在链表中的 `List Node` 节点（用于串页）                                                                                                                |
+## 4.2. Undo 页面链表组织方式
+
+### 单个事务内的 Undo 页面链表
+- 一个事务可执行多个语句，每条语句又可能修改多条记录 → 可能产生很多条 Undo 日志。
+- **一个 Undo 页放不下** → 多个页组成链表，用 `TRX_UNDO_PAGE_NODE` 串联。
+
+### 链表分类
+由于：
+1. 同一页中不能混放不同类型的 Undo 日志（Insert vs Update）
+2. 普通表与临时表需分开记录（原因后续解释）
+因此一个事务**最多会创建 4 类 Undo 页链表**：
+
+|Undo链表类型|触发条件|
+|---|---|
+|普通表的 insert undo链表|INSERT 语句 / 更新主键|
+|普通表的 update undo链表|DELETE / 非主键 UPDATE|
+|临时表的 insert undo链表|向临时表插入 / 更新主键|
+|临时表的 update undo链表|删除临时表记录 / 非主键 UPDATE|
+**分配策略**：按需分配（懒加载）
+- 刚开启事务时：**不分配任何链表**
+- 哪种操作触发了对应类型的 Undo 日志，就创建相应链表。
+
+### 多个事务下的 Undo 页面链表
+
+- 为提升并发效率，**不同事务使用不同 Undo 页面链表**
+- 例如：
+    - 事务 trx1 修改普通表和临时表 → 分配3条链表
+    - 事务 trx2 只修改普通表 → 分配2条链表
+- 所以，多个事务并发执行时，会创建多个链表实例，每个链表独立维护。
+好处
+- 提高日志写入并发能力（链表并行）
+- 避免事务间 undo 空间干扰
+- 便于事务提交/回滚时只处理自己链表中的日志
+# 5. undo日志具体写入过程
+## 5.1. Undo Log Segment Header
+每个 Undo 页链表对应一个独立的段（Segment）
+- 称为 **Undo Log Segment**
+- 位于该链表的第一个页面（`first undo page`）的特殊区域，称为 `Undo Log Segment Header`
+- 包含以下字段：
+
+|字段名|含义|
+|---|---|
+|`TRX_UNDO_STATE`|当前段状态（活跃、待清理、待回收、已缓存、PREPARED）|
+|`TRX_UNDO_LAST_LOG`|本链表中最后一个 Undo Log Header 的位置|
+|`TRX_UNDO_FSEG_HEADER`|段头信息，即前面提到的 Segment Header（10字节）|
+|`TRX_UNDO_PAGE_LIST`|该段内 Undo 页链表的基节点（List Base Node）|
+### 状态枚举（`TRX_UNDO_STATE`）：
+
+|状态枚举值|含义|
+|---|---|
+|`TRX_UNDO_ACTIVE`|当前事务活跃，正在写 Undo 日志|
+|`TRX_UNDO_CACHED`|Undo 页面链表被缓存，可供重用|
+|`TRX_UNDO_TO_FREE`|INSERT undo 页面链表已不可重用，等待释放|
+|`TRX_UNDO_TO_PURGE`|UPDATE undo 页面链表需保留供 MVCC，等待清除|
+|`TRX_UNDO_PREPARED`|事务处于分布式 PREPARE 状态（略）|
