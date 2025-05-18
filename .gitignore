@@ -1,1 +1,8 @@
-.obsidian/
+# 忽略 .obsidian 文件夹中的所有内容
+.obsidian/*
+
+# 但不忽略 plugins 子文件夹
+!.obsidian/plugins/
+
+# 不忽略 plugins 子文件夹中的所有内容
+!.obsidian/plugins/**
