@@ -13,26 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "项目.md",
+                "file": "MySQL是怎样运行的/查询重写.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "项目"
+              "title": "查询重写"
             }
           },
           {
-            "id": "fba9742c3d7f0e8b",
+            "id": "9fa8943b0bd7a40b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MySQL是怎样运行的/事务的隔离级别与  MVCC.md",
+                "file": "锁.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "事务的隔离级别与  MVCC"
+              "title": "锁"
             }
           }
         ],
@@ -109,13 +109,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MySQL是怎样运行的/事务的隔离级别与  MVCC.md",
+                "file": "锁.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "事务的隔离级别与  MVCC 的大纲"
+              "title": "锁 的大纲"
             }
           },
           {
@@ -128,8 +128,7 @@
               "title": "Source Control"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -146,9 +145,13 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "29c88ce00bfa2ebb",
+  "active": "9fa8943b0bd7a40b",
   "lastOpenFiles": [
     "MySQL是怎样运行的/查询重写.md",
+    "锁.md",
+    "MySQL是怎样运行的/事务.md",
+    "MySQL是怎样运行的/事务的隔离级别与  MVCC.md",
+    "MySQL是怎样运行的/外连接消除.md",
     "Vmare.md",
     "MySQL是怎样运行的/redo log.md",
     "实习日记",
@@ -156,14 +159,11 @@
     "Spring注解.md",
     "MySQL是怎样运行的/子查询的执行方式与优化.md",
     "2025-05-18.md",
-    "MySQL是怎样运行的/事务的隔离级别与  MVCC.md",
     "未命名.canvas",
     "MySQL是怎样运行的/undo log.md",
-    "MySQL是怎样运行的/事务.md",
     "MySQL是怎样运行的/InnoDB的Buffer.md",
     "MySQL是怎样运行的/子查询语法.md",
     "MySQL是怎样运行的/Explain详解.md",
-    "MySQL是怎样运行的/外连接消除.md",
     "塔里木中期汇报.md",
     "MySQL是怎样运行的",
     "Petrel公式.md",
