@@ -20,8 +20,23 @@
               "icon": "lucide-file",
               "title": "Spring介绍"
             }
+          },
+          {
+            "id": "5d9b7390cd828a51",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Vmare.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Vmare"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -94,13 +109,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "MySQL是怎样运行的/查询重写.md",
+                "file": "相关名词概念.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "查询重写 的大纲"
+              "title": "相关名词概念 的大纲"
             }
           },
           {
@@ -114,12 +129,12 @@
             }
           },
           {
-            "id": "3db0818746296af9",
+            "id": "a0d5a23aadc7871a",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Spring实战/Spring介绍.md",
+                "file": "Vmare.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -129,25 +144,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Spring介绍 的反向链接列表"
+              "title": "Vmare 的反向链接列表"
             }
           },
           {
-            "id": "f25f3dabd709d7e4",
+            "id": "dea8ee586faf9acd",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Spring实战/Spring介绍.md",
+                "file": "Vmare.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Spring介绍 的出链列表"
+              "title": "Vmare 的出链列表"
             }
           },
           {
-            "id": "245edf0b8c8df16a",
+            "id": "12ea2ed982048622",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -179,8 +194,9 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "50b18ae97a2bd114",
+  "active": "5d9b7390cd828a51",
   "lastOpenFiles": [
+    "相关名词概念.md",
     "Spring实战/Spring介绍.md",
     "Spring实战",
     "MySQL是怎样运行的/锁.md",
@@ -210,7 +226,6 @@
     "项目.md",
     "项目前端.md",
     "Stream流常见操作.md",
-    "面试/Linux.md",
     "Python",
     "Pasted image 20250324004830.png",
     "Pasted image 20250324011900.png",
