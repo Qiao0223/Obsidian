@@ -8,3 +8,8 @@ sudo vmhgfs-fuse .host:/shared /mnt/hgfs -o allow_other
 ```
 code2prompt . -O prompt.txt --hidden --full-directory-tree
 ```
+
+# 3. 启动Vue前端
+```
+pnpm run dev
+```
