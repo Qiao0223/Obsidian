@@ -11,10 +11,14 @@
             "id": "086418c93fdecba6",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "塔里木中期汇报.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "新标签页"
+              "title": "塔里木中期汇报"
             }
           }
         ]
@@ -164,7 +168,7 @@
       "command-palette:打开命令面板": false
     }
   },
-  "active": "086418c93fdecba6",
+  "active": "b88d5830e97a78bb",
   "lastOpenFiles": [
     "欢迎.md"
   ]
