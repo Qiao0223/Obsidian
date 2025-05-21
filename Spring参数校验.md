@@ -192,14 +192,103 @@ public class ConsentDto {
 }
 ```
 
-## 2.6. 校验分组与组合
+# 3. 校验分组与组合
 
-### 分组校验（Validation Groups）
+在 Java Bean Validation（JSR-303/JSR-380）规范中，校验注解如 `@NotNull`、`@Size` 等提供了 `groups` 属性，用于指定该约束所属的分组。通过在校验注解中设置 `groups`，可以将不同的校验规则归类。
 
-- 结合 Spring 的 `@Validated(Group.class)` 可针对不同操作应用不同约束，比如新增、更新场景下对同一字段使用不同注解。 
-### 组合注解（Constraint Composition）
+在使用 `@Validated` 注解时，可以指定要应用的校验分组，框架将只执行该分组中定义的校验规则。
 
-- Hibernate Validator 支持通过 `@ConstraintComposition` 等元注解自定义复合约束，将多个内置注解逻辑组合在一起。 
+## 3.1. 使用分组校验的步骤
+
+### 1. 定义分组接口
+
+创建空接口作为分组标识：
+```
+public interface AddGroup {} 
+public interface UpdateGroup {}
+```
+### 2. 在实体类字段上添加校验注解，并指定分组
+
+在需要校验的字段上添加注解，并通过 `groups` 属性指定所属分组
+
+```
+public class UserDTO {
+
+    @NotNull(message = "ID不能为空", groups = UpdateGroup.class)
+    private Long id;
+
+    @NotBlank(message = "用户名不能为空", groups = {AddGroup.class, UpdateGroup.class})
+    private String username;
+
+    @Size(min = 6, max = 20, message = "密码长度应在6到20之间", groups = AddGroup.class)
+    private String password;
+
+    // 其他字段和方法...
+}
+```
+
+在上述示例中：
+
+- `id` 字段仅在更新操作时进行非空校验。
+- `username` 字段在新增和更新操作时都进行非空校验。
+- `password` 字段仅在新增操作时进行长度校验。
+
+### 3. 在 Controller 方法中指定校验分组
+
+在处理请求的方法参数上使用 `@Validated` 注解，并指定对应的分组：
+
+```
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @PostMapping("/add")
+    public String addUser(@Validated(AddGroup.class) @RequestBody UserDTO userDTO) {
+        // 处理新增逻辑
+        return "用户新增成功";
+    }
+
+    @PostMapping("/update")
+    public String updateUser(@Validated(UpdateGroup.class) @RequestBody UserDTO userDTO) {
+        // 处理更新逻辑
+        return "用户更新成功";
+    }
+}
+```
+
+在上述示例中，`addUser` 方法将只执行 `AddGroup` 分组中的校验规则，而 `updateUser` 方法将只执行 `UpdateGroup` 分组中的校验规则。
+
+## 3.2. 注意事项
+
+- **未指定分组的校验注解**：如果校验注解未指定 `groups` 属性，默认属于 `Default` 分组。
+- **使用 `@Validated` 指定分组时**：仅会执行指定分组中的校验规则，`Default` 分组的校验规则不会被执行，除非显式地将 `Default.class` 包含在内。
+- **使用 `@Valid` 注解时**：只会执行 `Default` 分组中的校验规则，不支持分组校验。
+- **分组继承**：可以通过接口继承的方式创建分组序列，实现多个分组的组合校验。
+
+## 3.3. 分组继承
+
+通过接口继承定义分组序列：
+
+```
+public interface CreateGroup {}
+public interface UpdateGroup {}
+
+@GroupSequence({CreateGroup.class, UpdateGroup.class})
+public interface ValidationSequence {}
+```
+
+在 Controller 方法中使用分组序列：
+
+```
+@PostMapping("/save")
+public String saveUser(@Validated(ValidationSequence.class) @RequestBody UserDTO userDTO) {
+    // 处理保存逻辑
+    return "用户保存成功";
+}
+```
+在上述示例中，`saveUser` 方法将按照 `ValidationSequence` 中定义的顺序，先执行 `CreateGroup` 分组的校验规则，再执行 `UpdateGroup` 分组的校验规则。
+
+通过合理使用分组校验，可以根据不同的业务场景灵活地应用不同的校验规则，提高代码的可维护性和复用性。
 
 
 
@@ -234,7 +323,7 @@ Spring Bean Validation 提供了一系列内置约束注解，常见的包括：
 - `@Pattern`：正则表达式校验 [Baeldung](https://www.baeldung.com/java-validation?utm_source=chatgpt.com)
     
 
-## 2.7. 在 Controller 中使用参数校验
+## 3.4. 在 Controller 中使用参数校验
 
 ### 1. `@Valid` 与 `@Validated`
 
@@ -255,7 +344,7 @@ java
 
 `BindingResult` 提供了 `hasErrors()`、`getFieldErrors()` 等方法，便于在业务层对错误进行细粒度控制。 [Medium](https://medium.com/%40ByteCodeBlogger/bindingresult-an-interface-in-spring-framewr-a-feature-many-developers-dont-use-38d6232292f9?utm_source=chatgpt.com)
 
-## 2.8. 全局异常处理
+## 3.5. 全局异常处理
 
 通过 `@ControllerAdvice` + `@ExceptionHandler`，可统一捕获校验异常并定制返回格式：
 
@@ -267,7 +356,7 @@ java
 
 这样既可避免在每个控制器中重复校验逻辑，也能为前端提供规范化的错误结构。 [Home](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html?utm_source=chatgpt.com)
 
-## 2.9. 校验分组（Validation Groups）
+## 3.6. 校验分组（Validation Groups）
 
 使用 `@Validated(Group.class)` 可针对不同场景执行差异化校验，例如新增（AddGroup）和编辑（EditGroup）时对同一字段施加不同约束：
 
@@ -287,7 +376,7 @@ java
 
 [reflectoring.io](https://reflectoring.io/bean-validation-with-spring-boot/?utm_source=chatgpt.com)
 
-## 2.10. 自定义校验
+## 3.7. 自定义校验
 
 ### 1. 实现 `Validator` 接口
 
@@ -322,7 +411,7 @@ java
 
 [Home](https://docs.spring.io/spring-framework/reference/core/validation/validator.html?utm_source=chatgpt.com)
 
-## 2.11. 方法级参数校验
+## 3.8. 方法级参数校验
 
 借助 AOP，Spring 也支持对 Service 层方法参数或返回值进行校验，只需在配置类或主类上添加 `@Validated` 并在方法参数上使用约束注解：
 
