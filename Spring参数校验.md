@@ -290,6 +290,63 @@ public String saveUser(@Validated(ValidationSequence.class) @RequestBody UserDTO
 
 通过合理使用分组校验，可以根据不同的业务场景灵活地应用不同的校验规则，提高代码的可维护性和复用性。
 
+## 3.4. 分组校验的实际意义
+
+1. **适应不同的业务场景**
+    
+    在实际开发中，同一个数据对象可能在不同的业务操作中有不同的校验需求。例如：
+    - **新增操作**：可能要求所有字段都必须填写。
+    - **更新操作**：可能只要求填写需要更新的字段。
+    
+    通过分组校验，可以在同一个对象中为不同的操作定义不同的校验规则，避免为每种操作创建多个对象类。
+    
+2. **减少代码冗余**
+    
+    如果不使用分组校验，可能需要为每种操作创建不同的对象类（如 `UserAddDTO`、`UserUpdateDTO` 等），这会导致大量重复的代码。使用分组校验，可以在一个类中定义所有字段，并根据操作类型应用不同的校验规则，从而减少代码冗余。
+    
+3. **提高代码的可维护性**
+    
+    当业务需求变化时，只需在相应的分组中调整校验规则，而不需要修改多个对象类，降低了维护成本。
+
+### 示例说明
+
+假设有一个用户对象 `UserDTO`，在新增和更新操作中对字段的校验要求不同：
+
+```
+public class UserDTO {
+
+    @NotBlank(message = "用户名不能为空", groups = {AddGroup.class, UpdateGroup.class})
+    @Size(min = 3, max = 20, message = "用户名长度必须在3到20个字符之间", groups = AddGroup.class)
+    @Size(min = 5, max = 15, message = "用户名长度必须在5到15个字符之间", groups = UpdateGroup.class)
+    private String username;
+
+    // 其他字段和方法...
+}
+```
+
+在控制器中，根据操作类型指定校验分组：
+
+```
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @PostMapping("/add")
+    public String addUser(@Validated(AddGroup.class) @RequestBody UserDTO userDTO) {
+        // 处理新增逻辑
+        return "用户新增成功";
+    }
+
+    @PostMapping("/update")
+    public String updateUser(@Validated(UpdateGroup.class) @RequestBody UserDTO userDTO) {
+        // 处理更新逻辑
+        return "用户更新成功";
+    }
+}
+```
+
+通过上述方式，可以在同一个对象类中，根据不同的操作类型应用不同的校验规则，既满足了业务需求，又避免了代码重复。
+
 
 
 
@@ -323,7 +380,7 @@ Spring Bean Validation 提供了一系列内置约束注解，常见的包括：
 - `@Pattern`：正则表达式校验 [Baeldung](https://www.baeldung.com/java-validation?utm_source=chatgpt.com)
     
 
-## 3.4. 在 Controller 中使用参数校验
+## 3.5. 在 Controller 中使用参数校验
 
 ### 1. `@Valid` 与 `@Validated`
 
@@ -344,7 +401,7 @@ java
 
 `BindingResult` 提供了 `hasErrors()`、`getFieldErrors()` 等方法，便于在业务层对错误进行细粒度控制。 [Medium](https://medium.com/%40ByteCodeBlogger/bindingresult-an-interface-in-spring-framewr-a-feature-many-developers-dont-use-38d6232292f9?utm_source=chatgpt.com)
 
-## 3.5. 全局异常处理
+## 3.6. 全局异常处理
 
 通过 `@ControllerAdvice` + `@ExceptionHandler`，可统一捕获校验异常并定制返回格式：
 
@@ -356,7 +413,7 @@ java
 
 这样既可避免在每个控制器中重复校验逻辑，也能为前端提供规范化的错误结构。 [Home](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html?utm_source=chatgpt.com)
 
-## 3.6. 校验分组（Validation Groups）
+## 3.7. 校验分组（Validation Groups）
 
 使用 `@Validated(Group.class)` 可针对不同场景执行差异化校验，例如新增（AddGroup）和编辑（EditGroup）时对同一字段施加不同约束：
 
@@ -376,7 +433,7 @@ java
 
 [reflectoring.io](https://reflectoring.io/bean-validation-with-spring-boot/?utm_source=chatgpt.com)
 
-## 3.7. 自定义校验
+## 3.8. 自定义校验
 
 ### 1. 实现 `Validator` 接口
 
@@ -411,7 +468,7 @@ java
 
 [Home](https://docs.spring.io/spring-framework/reference/core/validation/validator.html?utm_source=chatgpt.com)
 
-## 3.8. 方法级参数校验
+## 3.9. 方法级参数校验
 
 借助 AOP，Spring 也支持对 Service 层方法参数或返回值进行校验，只需在配置类或主类上添加 `@Validated` 并在方法参数上使用约束注解：
 
