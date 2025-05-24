@@ -74,3 +74,42 @@ Cron 表达式由 6 或 7 个字段组成，依次表示：秒、分、时、日
 - `,`：表示列出枚举值
 - `/`：表示步长
 例如，`0 0/5 9-17 * * MON-FRI` 表示在每周一至周五的 9 点至 17 点之间，每隔 5 分钟执行一次任务。
+
+# 3. 多线程执行定时任务
+
+默认情况下，`@Scheduled` 注解的方法在单线程中执行，可能导致任务之间互相阻塞。为实现多线程执行，可以自定义线程池
+```
+@Configuration
+@EnableScheduling
+public class SchedulerConfig implements SchedulingConfigurer {
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.setScheduler(taskExecutor());
+    }
+
+    @Bean
+    public Executor taskExecutor() {
+        return Executors.newScheduledThreadPool(5);
+    }
+}
+```
+此外，结合 `@Async` 注解也可以实现异步执行任务
+```
+@Component
+public class AsyncScheduledTasks {
+
+    @Async
+    @Scheduled(fixedRate = 5000)
+    public void performTask() {
+        // 异步执行的任务
+    }
+}
+```
+
+# 4. 注意事项
+
+- **方法限制**：被 `@Scheduled` 注解的方法必须无参数，且返回类型为 `void`。
+- **异常处理**：定时任务方法中的异常不会被外部捕获，需在方法内部进行处理，防止任务中断。
+- **任务阻塞**：默认单线程执行，长时间运行的任务可能阻塞其他任务。可通过自定义线程池或使用异步执行解决。
+- **分布式环境**：在多实例部署的情况下，所有实例都会执行定时任务。需结合分布式锁（如 Redis、Zookeeper）来确保任务的唯一执行。
