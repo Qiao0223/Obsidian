@@ -20,7 +20,7 @@ Quartz 是一个功能强大的开源任务调度框架，完全由 Java 编写�
 - **JobStore（任务存储）**  
     定义任务的存储方式：
     - **RAMJobStore**：将任务存储在内存中，适用于对任务持久性要求不高的场景。
-    - **JDBCJobStore**：将任务存储在数据库中，支持任务的持久化，适用于需要任务持久化和集群部署的场景。[mikechen](https://mikechen.cc/4499.html?utm_source=chatgpt.com)
+    - **JDBCJobStore**：将任务存储在数据库中，支持任务的持久化，适用于需要任务持久化和集群部署的场景。
     
 - **Listener（监听器）**  
     用于监听任务的执行过程，Quartz 提供了 JobListener、TriggerListener 和 SchedulerListener 三种监听器，方便在任务执行前后进行日志记录、通知等操作。
