@@ -43,3 +43,10 @@ public PageInfo<User> getUsers(int pageNum, int pageSize) {
 }
 ```
 
+Controller 层
+```
+@GetMapping("/users")
+public PageInfo<User> listUsers(@RequestParam int pageNum, @RequestParam int pageSize) {
+    return userService.getUsers(pageNum, pageSize);
+}
+```
