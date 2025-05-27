@@ -193,3 +193,48 @@ const socket = new WebSocket("ws://localhost:8080/websocket");
 
 由 Spring 的 `WebSocketHandler` 触发连接事件（`afterConnectionEstablished`）；
 然后才开始消息收发。
+
+# 6. 原生 WebSocket 与 STOMP 的区别
+
+## 6.1. 详细对比
+|功能点|不用 STOMP（原生 `WebSocketHandler`）|用 STOMP（Spring + `@MessageMapping` + `SimpMessagingTemplate`）|
+|---|---|---|
+|**通信协议**|原始 WebSocket|WebSocket + STOMP（类 HTTP 协议）|
+|**连接入口**|`/websocket`（你注册的路径）|`/ws`（由 STOMP config 注册）|
+|**消息结构**|任意文本或二进制，格式自定义|STOMP 帧格式（有命令头、destination 等字段）|
+|**路由机制**|手动实现判断消息类型、路由|自动映射 `/app/xxx → @MessageMapping("/xxx")`|
+|**广播**|手动遍历所有 session 调用 `sendMessage()`|`@SendTo("/topic/xxx")` 或 `convertAndSend()` 一行代码|
+|**点对点发送**|需自己维护用户-会话映射表|支持 `convertAndSendToUser()`（自动映射用户）|
+|**订阅机制**|你要自己写“谁订阅了什么”的逻辑|客户端调用 `subscribe('/topic/xxx')`，由框架自动管理|
+|**会话管理**|你维护 `Map<String, WebSocketSession>`|Spring 框架管理，无需手动|
+|**异常处理、断线重连**|需手动管理|SockJS + STOMP 支持自动重连、错误处理|
+|**前端协议兼容性**|仅浏览器支持 WebSocket 的才能用|SockJS 支持回退为 AJAX 等|
+|**调试与可读性**|比较底层、调试困难|STOMP 命令语义清晰（CONNECT, SUBSCRIBE, SEND）|
+## 6.2. 使用体验层面对比
+
+### 不使用 STOMP（原始 WebSocket）：
+
+- 优点：
+
+    - 更轻量，没有额外协议负担。
+    - 自由度高，适合简单场景（如聊天、心跳、游戏控制等）。
+
+- 缺点：
+    
+    - 没有消息语义，自己处理订阅、频道分发。
+    - 不支持用户维度、组播、权限拦截等功能。
+    - 增加复杂度，容易出 bug。
+
+### 使用 STOMP：
+
+- 优点：
+    
+    - 协议层支持【订阅/广播/用户消息】机制。
+    - 后端逻辑清晰（类似 HTTP controller）。
+    - 一套消息系统架构，易于扩展 RabbitMQ / Kafka 等消息代理。
+    - 前后端一致性更强。
+
+- 缺点：
+    
+    - 增加依赖和学习成本（STOMP + SockJS）。
+    - 对于极轻量用途略显“重”。
