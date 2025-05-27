@@ -24,3 +24,172 @@ WebSocket 的通信过程主要包括以下几个步骤：[apifox+1perfect.org+1
 | 服务器推送能力 | 不支持        | 支持              |
 | 数据传输效率  | 较低，头部信息冗余  | 高效，头部信息精简       |
 | 应用场景    | 静态网页、表单提交等 | 实时聊天、在线游戏、股票行情等 |
+
+# 4. 使用Spring 的 `WebSocketHandler`实现
+## 4.1. 配置 WebSocket 映射路径
+
+通过 `WebSocketConfigurer` 注册 Handler 和路由路径。
+```
+@Configuration
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+    @Override
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry
+            .addHandler(new MyHandler(), "/websocket") // 路由绑定
+            .setAllowedOrigins("*"); // 允许跨域
+    }
+}
+```
+
+### 作用
+
+- **建立 URI 与后端逻辑的映射**：把浏览器访问的 `ws://localhost:8080/websocket` 路径绑定到后端的 `WebSocketHandler` 实现上。
+- **相当于 DispatcherServlet 的 URL 映射功能**，但用于 WebSocket 协议（`ws://`），而非传统 HTTP。
+
+### 为什么需要
+
+- 客户端连接 WebSocket 时必须提供连接地址，这一步就是告诉 Spring Boot：`/websocket` 请求该由谁处理（即 MyHandler）。
+
+## 4.2. 实现 WebSocketHandler 逻辑
+
+通过继承 `TextWebSocketHandler` 实现消息处理逻辑。
+```
+public class MyHandler extends TextWebSocketHandler {
+
+    // 连接建立时触发
+    @Override
+    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+        System.out.println("客户端连接：" + session.getId());
+    }
+
+    // 收到客户端消息时触发
+    @Override
+    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        System.out.println("收到消息：" + message.getPayload());
+
+        // 回复消息给客户端
+        session.sendMessage(new TextMessage("后端已收到：" + message.getPayload()));
+    }
+
+    // 连接关闭时触发
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        System.out.println("连接关闭：" + session.getId());
+    }
+
+    // 异常处理
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        exception.printStackTrace();
+    }
+}
+```
+
+### 作用
+
+- **处理实际的 WebSocket 消息交互**：
+    
+    - `onOpen`：连接建立时调用
+    - `handleTextMessage`：客户端发消息时调用
+    - `onClose`：连接断开时调用
+    - `onError`：发生异常时调用
+
+### 为什么需要
+
+- WebSocket 是双向通信协议，客户端可以随时发消息，后端必须定义如何处理这些“事件”。这一层就是事件处理器。
+
+## 4.3. 会话管理（可选但常用）
+
+如果你要广播消息或针对特定用户推送消息，就需要维护一个 `session` 映射：
+```
+private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+
+@Override
+public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    sessions.put(session.getId(), session);
+}
+
+@Override
+public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    sessions.remove(session.getId());
+}
+```
+广播所有连接：
+```
+public void broadcast(String msg) {
+    sessions.values().forEach(session -> {
+        try {
+            session.sendMessage(new TextMessage(msg));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    });
+}
+```
+
+### 作用：
+
+- **保存所有客户端的连接对象**（`WebSocketSession`）
+    
+    - 这样你可以广播消息给所有用户
+    - 或者点对点推送给某个特定的用户
+
+### 为什么需要
+
+- 默认情况下，WebSocket 是“被动”的。要实现“主动推送”消息，必须保留会话引用。
+- 没有这一步，你就不能在其他地方调用 `session.sendMessage()`。
+
+## 4.4. 发送消息的接口（可选）
+
+可以提供 REST 接口调用后端主动推送消息：
+```
+@RestController
+@RequestMapping("/api/message")
+public class MessageController {
+    @PostMapping("/broadcast")
+    public String broadcast(@RequestParam String msg) {
+        MyHandler.broadcast(msg); // 调用 handler 中的广播逻辑
+        return "OK";
+    }
+}
+```
+
+### 作用
+
+- 提供一个传统的 HTTP 接口，可以在系统中通过 HTTP 请求向 WebSocket 客户端发送消息。
+- 实现“从后端主动触发”消息，而不是依赖前端发起请求。
+
+### 为什么需要
+
+- 这是将 WebSocket 融入系统业务逻辑的关键桥梁。
+- 例如，你监听数据库变更或告警事件时，就可以通过调用这个接口通知前端。
+
+# 5. 实际流程
+
+访问一个前端页面时（比如某个 HTML 页面或 Vue/React 页面），确实**可能触发多个 HTTP 请求或控制器逻辑**，但**WebSocket 的建立不是由某个 controller 自动发起的**，而是由 **前端 JavaScript 主动调用 `new WebSocket(url)` 发起的连接请求**。
+
+## 5.1. 用户访问一个页面
+
+- 浏览器向后端请求 `GET /chat/index`（这是一个普通的 HTTP 请求），后端可能进入某个 `@Controller` 渲染页面或返回前端页面框架。
+- 举个例子
+```
+@GetMapping("/chat/index")
+public String chatPage() {
+    return "chat.html"; // 或者前端 Vue 项目
+}
+```
+
+## 5.2. 页面中的 JS 脚本发起 WebSocket 连接
+
+页面加载完成后，JS 中写了如下代码
+```
+const socket = new WebSocket("ws://localhost:8080/websocket");
+```
+这一句才是触发 WebSocket 建立连接的**关键行为**，它相当于向后端发送了一个升级请求（Upgrade: websocket）。
+这时就会匹配到 `WebSocketConfig` 中注册的 `/websocket` 路径，并交由你写的 `MyHandler` 处理。
+
+## 5.3. 后端的 WebSocketHandler 接收连接并建立会话
+
+由 Spring 的 `WebSocketHandler` 触发连接事件（`afterConnectionEstablished`）；
+然后才开始消息收发。
