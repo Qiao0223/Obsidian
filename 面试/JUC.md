@@ -597,4 +597,46 @@ public class BoundedBuffer {
 
 释放锁时，`state` 值减 1。如果 `state` 为 0，表示锁已完全释放，此时会唤醒同步队列中的下一个等待线程。
 
+# 8. ThreadLocal
+
+在 Java 并发编程中，`ThreadLocal` 是一个用于实现线程局部变量的类，它为每个线程提供独立的变量副本，从而实现线程间的数据隔离，避免了多线程环境下的数据共享问题。
+
+`ThreadLocal` 提供了线程内部的局部变量，每个线程可以通过 `get()` 和 `set()` 方法访问和修改自己的变量副本，而不会影响其他线程的副本。这对于需要在多个方法中共享某些数据，但又不希望被其他线程访问的场景非常有用。
+
+## 8.1. 底层实现原理
+
+每个线程 `Thread` 对象中包含一个 `ThreadLocalMap` 类型的成员变量 `threadLocals`，用于存储该线程的局部变量。`ThreadLocalMap` 是 `ThreadLocal` 的静态内部类，其结构类似于 `HashMap`，但为了避免内存泄漏，其键（`key`）是对 `ThreadLocal` 对象的弱引用（`WeakReference`）。
+
+当线程调用 `ThreadLocal` 的 `set()` 方法时，会将当前线程作为键，值作为值，存入该线程的 `threadLocals` 中。调用 `get()` 方法时，则从当前线程的 `threadLocals` 中获取对应的值。
+
+由于 `ThreadLocalMap` 的键是弱引用，如果 `ThreadLocal` 对象没有其他强引用，可能会被垃圾回收器回收，导致键为 `null` 的条目存在于 `threadLocals` 中，从而可能引发内存泄漏。因此，建议在使用完 `ThreadLocal` 后，调用其 `remove()` 方法，清除对应的值。
+
+## 8.2. 使用示例
+
+```
+public class ThreadLocalExample {
+    private static final ThreadLocal<Integer> threadLocalValue = new ThreadLocal<>();
+
+    public static void main(String[] args) {
+        threadLocalValue.set(100);
+        Integer value = threadLocalValue.get();
+        System.out.println("ThreadLocal value: " + value);
+        threadLocalValue.remove();
+    }
+}
+```
+在上述示例中，`threadLocalValue` 为每个线程提供了一个独立的 `Integer` 值。即使多个线程同时执行该代码，它们之间的 `threadLocalValue` 也是互不干扰的。
+
+## 8.3. 应用场景
+
+- **用户会话管理**：在 Web 应用中，可以使用 `ThreadLocal` 存储每个线程对应的用户会话信息，如用户 ID、权限等。
+- **数据库连接管理**：在数据库操作中，可以为每个线程分配一个独立的数据库连接，避免连接共享带来的问题。
+- **事务管理**：在事务处理中，可以使用 `ThreadLocal` 存储事务上下文信息，确保事务的一致性。
+- **避免参数传递**：在方法调用链较长的情况下，使用 `ThreadLocal` 可以避免在每个方法中传递相同的参数。
+
+## 8.4. 注意事项
+
+- **内存泄漏风险**：由于 `ThreadLocalMap` 的键是弱引用，如果不及时调用 `remove()` 方法清除无用的条目，可能会导致内存泄漏。
+- **线程池中的使用**：在使用线程池时，线程可能被重复使用，`ThreadLocal` 中的值可能会被下一个任务继承，导致数据混乱。因此，在使用线程池时，务必在任务结束后清除 `ThreadLocal` 中的值。
+- **不适用于共享数据**：`ThreadLocal` 适用于每个线程独立的数据存储，不适合用于线程之间共享数据的场景。
 
