@@ -596,3 +596,5 @@ public class BoundedBuffer {
 ### 4. 锁的释放流程
 
 释放锁时，`state` 值减 1。如果 `state` 为 0，表示锁已完全释放，此时会唤醒同步队列中的下一个等待线程。
+
+
