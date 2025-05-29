@@ -38,3 +38,47 @@ Java 集合框架主要由两个顶层接口组成：
 - **LinkedHashMap**：继承自 HashMap，维护键值对的插入顺序。
 - **TreeMap**：基于红黑树实现，键值对按键自动排序。
 - **Hashtable**：线程安全的哈希表，已被 ConcurrentHashMap 替代。
+
+# 2. 反射
+
+Java 反射机制（Reflection）是 Java 语言的一项强大特性，允许程序在运行时动态地检查和操作类的结构，包括类的属性、方法和构造函数等。这使得 Java 程序具有更高的灵活性和扩展性，广泛应用于框架设计、插件系统、序列化、测试等领域。
+
+## 2.1. 概念
+
+Java 反射机制主要依赖于以下几个核心类，这些类位于 `java.lang.reflect` 包中：
+
+- **`Class`**：表示类的字节码对象，是反射的起点。
+- **`Field`**：表示类的成员变量。
+- **`Method`**：表示类的方法。
+- **`Constructor`**：表示类的构造函数。
+
+通过这些类，程序可以在运行时获取类的详细信息，并进行相应的操作。
+
+## 2.2. 核心类
+
+Java 反射机制主要依赖于以下几个核心类，这些类位于 `java.lang.reflect` 包中：
+
+- **`Class`**：表示类的字节码对象，是反射的起点。
+- **`Field`**：表示类的成员变量。
+- **`Method`**：表示类的方法。
+- **`Constructor`**：表示类的构造函数。
+
+通过这些类，程序可以在运行时获取类的详细信息，并进行相应的操作。
+
+## 2.3. 获取 Class 对象的方式
+
+在使用反射之前，首先需要获取类的 `Class` 对象。Java 提供了以下几种方式来获取
+
+1. **通过类的 `.class` 属性**：
+
+    `Class<?> clazz = MyClass.class;`
+
+2. **通过对象的 `getClass()` 方法**：
+
+    `MyClass obj = new MyClass(); Class<?> clazz = obj.getClass();`
+
+3. **通过 `Class.forName()` 方法**：
+    
+    `Class<?> clazz = Class.forName("com.example.MyClass");`
+
+获取到 `Class` 对象后，就可以使用反射机制来操作类的成员了。
