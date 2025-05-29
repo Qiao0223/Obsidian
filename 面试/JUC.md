@@ -247,3 +247,352 @@ VisualVM 是一个功能强大的可视化工具，可用于分析和监控 Java
 1. 启动 VisualVM，连接到目标 Java 应用程序。
 2. 切换到“线程”选项卡。
 3. 点击“线程 Dump”按钮，查看线程堆栈信息，若存在死锁，VisualVM 会显示相关提示。
+
+# 5. Volatile
+
+在 Java 并发编程中，`volatile` 关键字是一个轻量级的同步机制，主要用于确保变量在多线程环境下的**可见性**和**有序性**，但**不保证原子性**。
+
+## 5.1. 核心特性
+
+### 1. 可见性（Visibility）
+
+当一个线程修改了被 `volatile` 修饰的变量，新的值会立即被刷新到主内存中，其他线程在读取该变量时会直接从主内存中获取最新的值，而不是从各自的工作内存中读取旧值。
+
+例如，以下代码中，如果不使用 `volatile`，线程 B 可能无法感知线程 A 对 `flag` 的修改，从而导致无限循环：[博客园+1GitHub+1](https://www.cnblogs.com/flydean/p/12680283.html?utm_source=chatgpt.com)
+```
+public class VisibilityExample {
+    private static volatile boolean flag = false;
+
+    public static void main(String[] args) {
+        new Thread(() -> {
+            while (!flag) {
+                // 等待 flag 变为 true
+            }
+            System.out.println("Flag is true.");
+        }).start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        flag = true;
+    }
+}
+```
+在上述示例中，`volatile` 保证了线程对 `flag` 变量的可见性，避免了线程间的可见性问题。
+
+### 2. 有序性（Ordering）
+
+`volatile` 关键字会禁止指令重排序优化，确保代码执行的顺序符合程序的预期。具体来说，写入 `volatile` 变量的操作会在其之前的所有操作执行完成后进行，读取 `volatile` 变量的操作会在其之后的所有操作开始之前进行。
+
+这在实现如双重检查锁定（Double-Checked Locking, DCL）等模式时非常重要。
+```
+public class Singleton {
+    private static volatile Singleton instance;
+
+    private Singleton() {}
+
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+在上述 DCL 实现中，`volatile` 确保了 `instance` 的初始化过程不会被指令重排序，从而避免了返回未完全初始化对象的问题。
+
+### 3. 不保证原子性（Atomicity）
+
+虽然 `volatile` 保证了变量的可见性和有序性，但它**不保证操作的原子性**。例如，`i++` 操作实际上包含读取、修改和写入三个步骤，即使 `i` 被声明为 `volatile`，多个线程同时执行 `i++` 仍可能导致竞态条件。
+
+要实现原子性操作，可以使用 `synchronized` 关键字或原子类（如 `AtomicInteger`）。
+```
+AtomicInteger count = new AtomicInteger(0);
+count.incrementAndGet(); // 原子性自增
+```
+
+## 5.2. 使用场景
+
+- **状态标志**：如用于控制线程停止的标志变量。
+- **单例模式**：配合 DCL 实现线程安全的懒加载单例。
+- **事件通知**：在一个线程中修改变量，其他线程能够立即感知变化。
+
+## 5.3. 注意事项
+
+- **不可用于复合操作**：如 `i++`、`i = i + 1` 等操作不是原子性的，`volatile` 无法保证其线程安全。
+- **不适用于依赖变量当前值的操作**：如检查变量是否为特定值后再修改的操作，可能会出现竞态条件。
+- **不替代锁机制**：在需要保证原子性或更复杂的同步控制时，应使用 `synchronized` 或其他并发控制机制。
+
+## 5.4. 底层实现原理
+
+### 1. 保证可见性：MESI 协议与缓存一致性
+
+在多核处理器系统中，每个核心都有自己的缓存。当一个线程修改了被 `volatile` 修饰的变量时，JMM 会确保该修改立即写入主内存，并使其他线程的缓存中该变量的副本失效。
+
+这一机制依赖于 CPU 的缓存一致性协议，常见的如 MESI（Modified、Exclusive、Shared、Invalid）协议。当一个核心修改了某个变量，它会通过总线嗅探（Bus Snooping）机制通知其他核心将该变量的缓存标记为无效，从而确保其他线程读取到的是最新的值。
+
+### 2. 保证有序性：内存屏障（Memory Barrier）
+
+为了防止指令重排序带来的问题，JMM 在 `volatile` 变量的读写操作中插入内存屏障，强制执行特定的内存访问顺序：
+
+- **写操作（Store）**：
+    
+    - 在写入 `volatile` 变量之前，插入 **StoreStore 屏障**，确保之前的写操作完成。
+    - 在写入之后，插入 **StoreLoad 屏障**，防止后续的读写操作被重排序到前面。[博客园+1程序猿说你好+1](https://www.cnblogs.com/vipstone/p/18044839?utm_source=chatgpt.com)
+    
+- **读操作（Load）**：
+    
+    - 在读取 `volatile` 变量之前，插入 **LoadLoad 屏障**，确保之前的读操作完成。
+    - 在读取之后，插入 **LoadStore 屏障**，防止后续的写操作被重排序到前面。[程序猿说你好](https://monkeysayhi.github.io/2016/11/29/volatile%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E4%BD%9C%E7%94%A8%E3%80%81%E5%8E%9F%E7%90%86/?utm_source=chatgpt.com)
+    
+
+这些内存屏障通过底层的 CPU 指令（如 x86 架构中的 `LOCK` 前缀）实现，确保了操作的有序性。
+
+### 3. `volatile` 与 `happens-before` 关系
+
+根据 JMM 的定义，对一个 `volatile` 变量的写操作 **happens-before** 于后续对该变量的读操作。这意味着：
+
+- 一个线程对 `volatile` 变量的写操作，对其他线程的后续读操作是可见的。
+- 确保了多线程环境下的内存可见性和操作有序性。
+
+# 6. Synchronized
+
+在 Java 并发编程中，`synchronized` 是一种内置的同步机制，用于控制多个线程对共享资源的访问，防止数据不一致和线程安全问题。
+
+## 6.1. `synchronized` 的使用方式
+
+`synchronized` 关键字可以用于以下三种场景：
+
+1. **修饰实例方法**：作用于当前实例对象，进入同步方法前需要获得该实例的锁。
+    
+    `public synchronized void instanceMethod() {     // 同步代码 }`
+    
+
+2. **修饰静态方法**：作用于当前类对象，进入同步方法前需要获得该类的类锁。
+    
+    `public static synchronized void staticMethod() {     // 同步代码 }`
+    
+
+3. **修饰代码块**：指定加锁对象，对给定对象加锁。
+    
+    `public void method() {     synchronized (lockObject) {         // 同步代码     } }`
+    
+
+通过上述方式，`synchronized` 可以确保在同一时刻，只有一个线程可以执行被同步的代码块，从而实现线程间的互斥访问。
+
+## 6.2. 特性
+
+- **可重入性**：同一线程可以多次获得同一把锁，避免死锁。
+- **原子性**：确保同步代码块中的操作是原子的，防止线程间的干扰。
+- **可见性**：线程在释放锁之前，会将对共享变量的修改刷新到主内存，其他线程在获得锁之后，可以看到最新的共享变量值。
+- **有序性**：在进入同步块之前，JVM 会插入内存屏障，禁止指令重排序，确保代码执行的顺序性。
+
+## 6.3. 注意事项
+
+- **避免死锁**：在设计同步代码时，注意锁的获取顺序，避免多个线程相互等待，导致死锁。
+- **锁的粒度**：尽量缩小同步代码块的范围，减少锁的持有时间，提高并发性能。
+- **性能考虑**：在高并发场景下，频繁的锁竞争可能导致性能下降，可考虑使用 `java.util.concurrent` 包中的锁机制，如 `ReentrantLock`。
+
+## 6.4. 底层实现原理
+
+在 JVM 中，`synchronized` 是通过**监视器锁（Monitor）**实现的，每个对象在内存中都有一个与之关联的 Monitor。
+
+### 对象头与 Monitor
+
+Java 对象在内存中的布局包括对象头（Header）、实例数据（Instance Data）和对齐填充（Padding）。对象头中包含了 Mark Word，用于存储对象的哈希码、GC 分代年龄、锁信息等。
+当线程进入同步代码块时，会尝试获取对象的 Monitor。如果 Monitor 已被其他线程持有，当前线程将被阻塞，直到获得 Monitor。
+
+### 锁的状态与升级
+
+为了提高性能，JVM 对锁进行了优化，引入了多种锁状态，并支持锁的升级和降级：
+
+1. **无锁（No Lock）**：默认状态，适用于不存在竞争的场景。
+2. **偏向锁（Biased Locking）**：当一个线程访问同步块并获得锁时，会在对象头中记录线程 ID，之后该线程再次访问同步块时，无需再次加锁。
+3. **轻量级锁（Lightweight Locking）**：当偏向锁被其他线程竞争时，会升级为轻量级锁，采用自旋的方式尝试获取锁，避免线程阻塞。
+4. **重量级锁（Heavyweight Locking）**：当自旋失败或竞争激烈时，升级为重量级锁，线程会被阻塞，等待唤醒。[
+
+锁的升级过程是单向的，即从无锁 → 偏向锁 → 轻量级锁 → 重量级锁，无法降级。
+
+# 7. ReentrantLock
+
+在 Java 并发编程中，`ReentrantLock` 是 `java.util.concurrent.locks` 包中提供的一个可重入的互斥锁，功能上类似于 `synchronized`，但提供了更高的灵活性和扩展性。
+
+## 7.1. 特性
+
+- **可重入性**：同一线程可以多次获取同一把锁，而不会发生死锁。
+- **公平性**：默认情况下，`ReentrantLock` 是非公平锁，即线程获取锁的顺序不保证先来先得。可以通过构造函数设置为公平锁，确保线程按照请求锁的顺序获得锁。
+- **可中断性**：线程在等待锁的过程中，可以响应中断，避免出现死锁的情况。
+- **尝试获取锁**：提供 `tryLock()` 方法，线程可以尝试获取锁，若获取不到则立即返回，避免长时间阻塞。
+- **超时获取锁**：提供 `tryLock(long timeout, TimeUnit unit)` 方法，线程在指定时间内尝试获取锁，超时未获取到则返回 `false`。
+- **条件变量**：通过 `newCondition()` 方法获取 `Condition` 对象，实现线程间的通信，比 `synchronized` 的 `wait()` 和 `notify()` 更加灵活。
+
+## 7.2. 使用示例
+
+```
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Counter {
+    private final ReentrantLock lock = new ReentrantLock();
+    private int count = 0;
+
+    public void increment() {
+        lock.lock(); // 加锁
+        try {
+            count++;
+        } finally {
+            lock.unlock(); // 解锁
+        }
+    }
+
+    public int getCount() {
+        return count;
+    }
+}
+```
+
+## 7.3. 高级功能
+
+### 1. 公平锁与非公平锁
+
+创建 `ReentrantLock` 实例时，可以指定锁的公平性：
+```
+ReentrantLock fairLock = new ReentrantLock(true); // 公平锁
+ReentrantLock nonFairLock = new ReentrantLock();  // 非公平锁（默认）
+```
+公平锁保证线程按照请求锁的顺序获得锁，避免线程饥饿；非公平锁可能导致某些线程长时间得不到锁，但性能通常较好。
+
+### 2. 可中断锁
+
+使用 `lockInterruptibly()` 方法，线程在等待锁的过程中可以响应中断
+```
+try {
+    lock.lockInterruptibly();
+    // 执行任务
+} catch (InterruptedException e) {
+    // 处理中断
+} finally {
+    lock.unlock();
+}
+```
+
+### 3. 尝试获取锁
+
+使用 `tryLock()` 方法，线程尝试获取锁，若获取不到则立即返回
+```
+if (lock.tryLock()) {
+    try {
+        // 执行任务
+    } finally {
+        lock.unlock();
+    }
+} else {
+    // 未获取到锁，执行其他操作
+}
+```
+使用 `tryLock(long timeout, TimeUnit unit)` 方法，线程在指定时间内尝试获取锁
+```
+try {
+    if (lock.tryLock(1, TimeUnit.SECONDS)) {
+        try {
+            // 执行任务
+        } finally {
+            lock.unlock();
+        }
+    } else {
+        // 超时未获取到锁，执行其他操作
+    }
+} catch (InterruptedException e) {
+    // 处理中断
+}
+```
+
+### 4. 条件变量
+
+`ReentrantLock` 提供 `newCondition()` 方法获取 `Condition` 对象，实现线程间的通信
+```
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class BoundedBuffer {
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition notFull  = lock.newCondition(); 
+    private final Condition notEmpty = lock.newCondition(); 
+
+    private final Object[] items = new Object[100];
+    private int putptr, takeptr, count;
+
+    public void put(Object x) throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == items.length)
+                notFull.await();
+            items[putptr] = x;
+            if (++putptr == items.length) putptr = 0;
+            ++count;
+            notEmpty.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public Object take() throws InterruptedException {
+        lock.lock();
+        try {
+            while (count == 0)
+                notEmpty.await();
+            Object x = items[takeptr];
+            if (++takeptr == items.length) takeptr = 0;
+            --count;
+            notFull.signal();
+            return x;
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+在上述示例中，`Condition` 对象 `notFull` 和 `notEmpty` 分别用于控制缓冲区的满和空状态，实现了生产者-消费者模型。
+
+## 7.4. 与 `synchronized` 的比较
+|特性|`synchronized`|`ReentrantLock`|
+|---|---|---|
+|可重入性|是|是|
+|公平性|否|可选（默认否）|
+|可中断性|否|是|
+|尝试获取锁|否|是|
+|超时获取锁|否|是|
+|条件变量|否|是|
+|锁的释放|自动|手动|
+|性能|较低|较高|
+
+## 7.5. 实现机制
+
+### 1. 基于 AQS 的同步控制
+
+`ReentrantLock` 通过继承自 AQS 的内部类 `Sync` 来实现锁的获取与释放。AQS 维护了一个 `state` 变量表示锁的状态（0 表示未锁定，正数表示锁定次数），并使用一个 FIFO 队列（CLH 队列的变体）来管理等待获取锁的线程。
+
+### 2. 锁的获取流程
+
+- **非公平锁**（默认）：
+    
+    - 线程尝试通过 CAS（Compare-And-Swap）操作将 `state` 从 0 设置为 1，成功则获得锁。
+    - 若失败，则进入 AQS 的同步队列，等待前驱节点释放锁后被唤醒。
+        
+- **公平锁**：
+    
+    - 线程在尝试获取锁前，会检查同步队列中是否有其他线程等待，若有，则排队等待；否则，尝试通过 CAS 获取锁。
+        
+
+### 3. 可重入性支持
+
+`ReentrantLock` 支持可重入性，即同一线程可以多次获取同一把锁。每次获取锁时，`state` 值加 1；每次释放锁时，`state` 值减 1；当 `state` 为 0 时，锁被完全释放。
+
+### 4. 锁的释放流程
+
+释放锁时，`state` 值减 1。如果 `state` 为 0，表示锁已完全释放，此时会唤醒同步队列中的下一个等待线程。
