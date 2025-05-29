@@ -82,3 +82,55 @@ Java 反射机制主要依赖于以下几个核心类，这些类位于 `java.la
     `Class<?> clazz = Class.forName("com.example.MyClass");`
 
 获取到 `Class` 对象后，就可以使用反射机制来操作类的成员了。
+
+## 2.4. 反射的常见操作
+
+### 1. 创建对象实例
+
+通过反射，可以在运行时创建类的实例：
+```
+Class<?> clazz = Class.forName("com.example.MyClass");
+Object instance = clazz.getDeclaredConstructor().newInstance();
+```
+
+### 2. 访问和修改字段
+
+可以通过反射访问和修改对象的属性，包括私有属性
+```
+Field field = clazz.getDeclaredField("fieldName");
+field.setAccessible(true); // 允许访问私有字段
+field.set(instance, value); // 设置字段值
+Object value = field.get(instance); // 获取字段值
+```
+
+### 3. 调用方法
+
+通过反射调用对象的方法
+```
+Method method = clazz.getDeclaredMethod("methodName", parameterTypes);
+method.setAccessible(true); // 允许访问私有方法
+Object result = method.invoke(instance, args);
+```
+
+### 4. 获取构造函数并创建实例
+
+可以获取特定的构造函数，并使用它创建对象
+```
+Constructor<?> constructor = clazz.getDeclaredConstructor(parameterTypes);
+constructor.setAccessible(true); // 允许访问私有构造函数
+Object instance = constructor.newInstance(args);
+```
+
+## 2.5. 优缺点
+
+**优点：**
+
+- **灵活性高**：可以在运行时动态地操作对象，提高了程序的灵活性。
+- **解耦合**：通过反射，可以减少代码之间的依赖，提高模块的独立性。
+- **框架支持**：许多框架（如 Spring、Hibernate）都依赖于反射机制来实现其核心功能。
+
+**缺点：**
+
+- **性能开销**：反射操作通常比直接代码调用慢，可能影响性能。
+- **安全性问题**：反射可以访问私有成员，可能破坏封装性，带来安全隐患。
+- **复杂性增加**：使用反射的代码通常更复杂，难以阅读和维护。
