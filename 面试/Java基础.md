@@ -134,3 +134,110 @@ Object instance = constructor.newInstance(args);
 - **性能开销**：反射操作通常比直接代码调用慢，可能影响性能。
 - **安全性问题**：反射可以访问私有成员，可能破坏封装性，带来安全隐患。
 - **复杂性增加**：使用反射的代码通常更复杂，难以阅读和维护。
+
+# 3. 泛型
+
+Java 泛型（Generics）是 Java SE 5 引入的一项重要特性，允许在类、接口和方法中使用类型参数，从而实现代码的类型安全和重用性。
+
+## 3.1. 概念
+
+泛型的本质是“参数化类型”，即在定义类、接口或方法时，将类型参数化，使其在使用时指定具体的类型。
+
+常见的类型参数命名约定包括：
+
+- `T`：Type（类型）
+- `E`：Element（元素）
+- `K`：Key（键）
+- `V`：Value（值）
+- `N`：Number（数字）
+
+## 3.2. 主要形式
+
+### 1. 泛型类
+
+定义泛型类时，在类名后使用尖括号 `<>` 指定类型参数。例如
+```
+public class Box<T> {
+    private T t;
+    public void set(T t) { this.t = t; }
+    public T get() { return t; }
+}
+```
+使用时指定具体类型：
+```
+Box<Integer> integerBox = new Box<>();
+integerBox.set(10);
+Integer value = integerBox.get();
+```
+
+### 2. 泛型接口
+
+定义泛型接口时，也在接口名后使用尖括号指定类型参数。例如
+```
+public interface Pair<K, V> {
+    K getKey();
+    V getValue();
+}
+```
+实现泛型接口时，可以指定具体类型或继续使用泛型：
+```
+public class OrderedPair<K, V> implements Pair<K, V> {
+    private K key;
+    private V value;
+    public OrderedPair(K key, V value) {
+        this.key = key;
+        this.value = value;
+    }
+    public K getKey() { return key; }
+    public V getValue() { return value; }
+}
+```
+
+### 3. 泛型方法
+
+泛型方法在返回类型前声明类型参数。例如：
+```
+public class Util {
+    public static <T> void printArray(T[] array) {
+        for (T element : array) {
+            System.out.println(element);
+        }
+    }
+}
+```
+调用泛型方法时，编译器会根据传入参数的类型推断类型参数：
+```
+Integer[] intArray = {1, 2, 3};
+Util.printArray(intArray);
+```
+
+## 3.3. 通配符与边界
+
+Java 泛型支持通配符 `?`，用于表示未知类型。通配符可以指定上界或下界：
+
+- `? extends T`：表示类型是 T 或其子类，适用于读取数据的场景。
+- `? super T`：表示类型是 T 或其父类，适用于写入数据的场景。
+
+```
+List<? extends Number> list = new ArrayList<Integer>();
+```
+在这个例子中，`list` 可以引用任何 `Number` 的子类的列表，如 `Integer`、`Double` 等。
+
+## 3.4. 类型擦除与限制
+
+Java 的泛型在编译时会进行类型擦除，即将类型参数替换为其限定类型（如未指定则为 `Object`），因此在运行时无法获取泛型的具体类型信息。
+
+这带来了一些限制：
+
+- 不能使用基本类型作为类型参数，如 `List<int>` 是非法的，需使用包装类型 `Integer`。
+- 不能创建泛型类型的数组，如 `new T[]` 是非法的。
+- 不能在静态上下文中引用泛型类型参数。
+
+这些限制是由于类型擦除机制导致的。
+
+## 3.5. 优势
+
+- **类型安全**：在编译时检查类型，减少运行时错误。
+- **代码重用**：编写一次代码，可适用于多种类型。
+- **可读性和可维护性**：代码更清晰，易于理解和维护。
+
