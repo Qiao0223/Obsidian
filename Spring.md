@@ -239,6 +239,126 @@ Spring Boot 提供了 CLI 工具，允许开发者使用命令行快速创建、
 
 ## 4.2. 自动配置原理
 
+### 1. 核心注解：@EnableAutoConfiguration
+
+在 Spring Boot 应用的主类上，通常使用 `@SpringBootApplication` 注解，它是一个复合注解，包含了：
+
+- `@SpringBootConfiguration`：标识该类为配置类。
+- `@ComponentScan`：启用组件扫描，自动发现并注册 Bean。
+- `@EnableAutoConfiguration`：启用自动配置功能。
+
+其中，`@EnableAutoConfiguration` 是实现自动配置的关键，它通过导入 `AutoConfigurationImportSelector` 类来加载自动配置类。
+
+### 2. 自动配置的实现流程
+
+1. **启动类加载**：  
+    应用启动时，`SpringApplication.run()` 方法被调用，触发 Spring Boot 的初始化流程。
+    
+2. **解析注解**：  
+    `@EnableAutoConfiguration` 注解通过 `@Import(AutoConfigurationImportSelector.class)` 导入自动配置类选择器。
+    
+3. **加载配置类**：  
+    `AutoConfigurationImportSelector` 的 `selectImports()` 方法会读取 `META-INF/spring.factories` 文件，获取所有自动配置类的全限定名。
+    
+4. **条件装配**：  
+    每个自动配置类通常使用 `@Conditional` 系列注解，如：
+    
+    - `@ConditionalOnClass`：当类路径下存在指定类时生效。
+    - `@ConditionalOnMissingBean`：当容器中不存在指定 Bean 时生效。
+    - `@ConditionalOnProperty`：当配置文件中存在指定属性时生效。
+    
+    这些条件注解确保只有在满足特定条件时，相关的 Bean 才会被注册到容器中。
+    
+5. **Bean 注册**：  
+    满足条件的自动配置类会被加载，其定义的 Bean 会被注册到 Spring 容器中，供应用使用。
+
+### 3. 示例：Redis 的自动配置
+
+当在项目中引入 `spring-boot-starter-data-redis` 依赖时，Spring Boot 会自动配置 Redis 相关的 Bean。其背后的自动配置类可能类似于：
+```
+@Configuration
+@ConditionalOnClass(RedisOperations.class)
+@ConditionalOnMissingBean(RedisConnectionFactory.class)
+@EnableConfigurationProperties(RedisProperties.class)
+public class RedisAutoConfiguration {
+    // Bean 定义
+}
+```
+上述配置类的含义是：
+
+- 当类路径下存在 `RedisOperations` 类时，才会进行配置。
+- 当容器中不存在 `RedisConnectionFactory` Bean 时，才会创建默认的 Bean。
+- 通过 `@EnableConfigurationProperties` 注解，将 `application.properties` 或 `application.yml` 中的配置属性绑定到 `RedisProperties` 类中。
+
+### 4. 自定义自动配置
+
+开发者可以根据需要创建自定义的自动配置类，步骤如下：
+
+1. **创建配置类**：  
+    定义一个类，并使用 `@Configuration` 注解标识。
+2. **添加条件注解**：  
+    根据需要，添加 `@Conditional` 系列注解，控制配置类的生效条件。
+3. **注册到 spring.factories**：  
+    在 `resources/META-INF/spring.factories` 文件中，添加如下配置：
+```
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.example.autoconfig.MyAutoConfiguration
+```
+    这样，Spring Boot 在启动时会加载并应用该自动配置类。
+
+# 5. Spring常用注解
+
+## 5.1. 核心组件与 Bean 管理
+
+- **@Component**：通用组件注解，标识一个类为 Spring 管理的 Bean。
+- **@Service**：用于标注服务层组件，属于 @Component 的特化。
+- **@Repository**：用于标注持久层组件，支持异常转换机制。
+- **@Configuration**：定义配置类，替代 XML 配置文件。
+- **@Bean**：用于在 @Configuration 类中定义 Bean。
+- **@ComponentScan**：指定扫描的包路径，自动发现并注册 Bean。
+- **@Import**：导入其他配置类或组件。
+- **@Scope**：定义 Bean 的作用域，如 singleton、prototype 等。
+
+## 5.2. 依赖注入与属性配置
+
+- **@Autowired**：按类型自动注入依赖对象。
+- **@Qualifier**：与 @Autowired 配合使用，指定注入 Bean 的名称。
+- **@Resource**：按名称或类型注入 Bean，属于 JSR-250 标准注解。
+- **@Value**：注入配置文件中的属性值。
+- **@Profile**：根据环境激活不同的配置。
+- **@Lazy**：延迟初始化 Bean，首次使用时才创建实例。
+
+## 5.3. 生命周期管理
+
+- **@PostConstruct**：在 Bean 初始化完成后执行的方法。
+- **@PreDestroy**：在 Bean 销毁前执行的方法。
+
+## 5.4. AOP
+
+- **@Aspect**：定义一个切面类。
+- **@Pointcut**：定义切点表达式。
+- **@Before**、**@After**、**@AfterReturning**、**@AfterThrowing**、**@Around**：定义不同类型的通知。
+
+## 5.5. 事务管理
+
+**@Transactional**：声明方法或类需要事务支持，支持事务传播行为和隔离级别的配置。
+
+## 5.6. 条件化与懒加载
+
+- **@Conditional**：根据特定条件决定是否创建 Bean。
+- **@DependsOn**：指定 Bean 的依赖关系，确保依赖的 Bean 先初始化。
+
+# 6. Spring MVC 常用注解
+
+## 6.1. 控制器相关注解
+
+**@RestController**：组合注解，等同于 `@Controller` 和 `@ResponseBody`，用于构建 RESTful Web 服务。
+
+## 6.2. 请求映射注解
+
+
+
+
 
 
 
