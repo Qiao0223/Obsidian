@@ -160,4 +160,88 @@ public class LoggingAspect {
 - **增强可维护性**：修改横切逻辑时，只需修改切面代码，无需修改业务代码。
 - **提高开发效率**：通过声明式的方式添加功能，减少重复代码。
 
+# 3. Spring MVC
+
+Spring MVC 是 Java 平台上广泛使用的 Web 框架，属于 Spring Framework 的核心模块之一。它基于模型-视图-控制器（MVC）设计模式，旨在帮助开发者构建结构清晰、职责分离、易于维护的 Web 应用程序。
+
+## 3.1. 核心概念
+
+Spring MVC 是一个基于 Java 的 Web 框架，采用 MVC 架构模式，将应用程序分为三个核心部分：
+
+- **模型（Model）**：封装应用程序的数据和业务逻辑，通常由 JavaBean 组成，负责数据的处理和状态管理。
+- **视图（View）**：负责数据的展示，通常使用 JSP、Thymeleaf、FreeMarker 等模板引擎生成用户界面。
+- **控制器（Controller）**：处理用户请求，协调模型和视图之间的交互，决定返回哪个视图以及提供哪些数据。    
+
+Spring MVC 的核心是 `DispatcherServlet`，它作为前端控制器，负责将所有的 HTTP 请求分发到相应的处理器（即控制器）进行处理。
+
+## 3.2. 工作流程
+
+Spring MVC 的请求处理流程如下：
+
+1. **请求接收**：用户发送的 HTTP 请求首先被 `DispatcherServlet` 拦截。
+2. **处理器映射**：`DispatcherServlet` 根据请求 URL，查找匹配的处理器（Controller），通过 `HandlerMapping` 完成映射。
+3. **调用处理器**：找到匹配的处理器后，`DispatcherServlet` 通过 `HandlerAdapter` 调用相应的处理方法。
+4. **返回模型和视图**：处理器执行后，返回一个包含模型数据和视图名称的 `ModelAndView` 对象。
+5. **视图解析**：`DispatcherServlet` 使用 `ViewResolver` 将视图名称解析为具体的视图对象。
+6. **渲染视图**：视图对象根据模型数据生成最终的 HTML 页面。
+7. **响应返回**：`DispatcherServlet` 将渲染后的视图返回给用户。
+
+这种设计使得请求处理流程清晰、可扩展，便于开发和维护。
+
+## 3.3. 核心组件介绍
+
+Spring MVC 包含多个核心组件，协同完成请求的处理：
+
+- **DispatcherServlet**：前端控制器，拦截所有请求，协调各个组件完成请求处理。
+- **HandlerMapping**：根据请求 URL，查找匹配的处理器。
+- **HandlerAdapter**：调用处理器方法，支持多种处理器类型。
+- **Controller**：处理具体的业务逻辑，返回模型和视图。
+- **ModelAndView**：封装模型数据和视图名称。
+- **ViewResolver**：将视图名称解析为具体的视图对象。
+- **View**：根据模型数据生成最终的视图内容。
+
+这些组件之间通过接口和策略模式解耦，方便扩展和定制。
+
+## 3.4. Spring MVC 的优势
+
+- **与 Spring 框架无缝集成**：利用 Spring 的 IoC 和 AOP 功能，简化配置和增强功能。
+- **基于注解的配置**：使用注解（如 `@Controller`、`@RequestMapping`）简化开发，减少 XML 配置。
+- **支持 RESTful 风格**：方便构建 RESTful API，满足现代 Web 应用需求。
+- **强大的数据绑定和验证机制**：自动将请求参数绑定到 Java 对象，支持数据验证。
+- **灵活的视图解析**：支持多种视图技术，如 JSP、Thymeleaf、FreeMarker 等。
+- **易于测试**：控制器作为普通的 Java 类，便于单元测试和集成测试。
+
+# 4. Spring Boot
+
+Spring Boot 是基于 Spring Framework 的开源框架，旨在简化 Spring 应用的开发、配置和部署过程。它通过自动配置、起步依赖和内嵌服务器等特性，使开发者能够快速构建独立、生产级的 Spring 应用程序。
+
+## 4.1. 核心特性
+
+### 1. 自动配置（Auto-Configuration）
+
+Spring Boot 能根据项目中的依赖和配置，自动设置应用所需的默认配置，减少了繁琐的手动配置工作。例如，添加了 Spring Web 依赖后，Spring Boot 会自动配置嵌入式的 Tomcat 服务器和 Spring MVC。
+
+### 2. 起步依赖（Starter Dependencies）
+
+Spring Boot 提供了一系列的起步依赖（如 `spring-boot-starter-web`、`spring-boot-starter-data-jpa`），它们封装了常用的依赖组合，简化了 Maven 或 Gradle 的配置。通过引入相应的起步依赖，开发者可以快速集成所需的功能模块。
+
+### 3. 内嵌服务器（Embedded Server）
+
+Spring Boot 内置了多种常用的 Web 服务器（如 Tomcat、Jetty、Undertow），允许应用以独立的 JAR 包形式运行，无需部署到外部服务器。这使得部署和测试更加方便，特别适合微服务架构。 
+
+### 4. 生产就绪特性（Production-Ready Features）
+
+通过 `spring-boot-starter-actuator`，Spring Boot 提供了丰富的生产级功能，如健康检查、指标监控、应用信息等，方便运维和监控。
+
+### 5. 命令行界面（Command-Line Interface）
+
+Spring Boot 提供了 CLI 工具，允许开发者使用命令行快速创建、运行和测试 Spring Boot 应用，进一步提升开发效率。
+
+## 4.2. 自动配置原理
+
+
+
+
+
+
 
