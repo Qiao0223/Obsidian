@@ -356,6 +356,83 @@ com.example.autoconfig.MyAutoConfiguration
 
 ## 6.2. 请求映射注解
 
+- **@RequestMapping**：用于将请求路径映射到处理方法上，可指定请求方法、路径、参数等。
+- **@GetMapping**、**@PostMapping**、**@PutMapping**、**@DeleteMapping**、**@PatchMapping**：分别对应 HTTP 的 GET、POST、PUT、DELETE、PATCH 请求，简化了 `@RequestMapping` 的使用。
+
+## 6.3. 参数绑定注解
+
+- **@RequestParam**：绑定请求参数到方法参数上，常用于处理表单数据或查询参数。
+- **@PathVariable**：绑定 URL 路径中的变量到方法参数上，常用于 RESTful 风格的接口。
+- **@RequestBody**：将请求体中的 JSON 或 XML 数据绑定到方法参数上，常用于处理 POST 请求。
+- **@RequestHeader**：绑定请求头中的属性值到方法参数上。
+- **@CookieValue**：绑定 Cookie 中的值到方法参数上。
+- **@ModelAttribute**：用于在方法参数上绑定请求参数到模型对象，或在方法上预处理模型数据。
+- **@SessionAttributes**：指定模型属性存储到会话中，以便多个请求之间共享数据。
+- **@MatrixVariable**：绑定 URL 路径中的矩阵变量到方法参数上。
+- **@RequestAttribute**：绑定请求域中的属性值到方法参数上。
+
+## 6.4. 响应处理注解
+
+- **@ResponseBody**：将方法返回值直接写入 HTTP 响应体中，常用于返回 JSON 或 XML 数据。
+- **@ResponseStatus**：设置方法返回的 HTTP 状态码和原因短语。
+
+## 6.5. 异常处理注解
+
+- **@ExceptionHandler**：定义处理特定异常的处理方法。
+- **@ControllerAdvice**：用于定义全局的异常处理、数据绑定等功能，作用于所有控制器。
+- **@RestControllerAdvice**：组合注解，等同于 `@ControllerAdvice` 和 `@ResponseBody`，用于定义全局的 RESTful 异常处理。
+
+## 6.6. 数据绑定与格式化注解
+
+**@InitBinder**：用于初始化数据绑定器，定制请求参数到方法参数的绑定过程。
+
+# 7. Spring Boot 常用注解
+
+## 7.1. 核心启动注解
+
+**`@SpringBootApplication`**：这是 Spring Boot 应用的核心注解，通常用于主类上。它是一个组合注解，包含了：
+- `@SpringBootConfiguration`：标识该类是 Spring Boot 的配置类，继承自 `@Configuration`。
+- `@EnableAutoConfiguration`：启用 Spring Boot 的自动配置机制，根据类路径中的依赖自动配置 Spring 应用。
+- `@ComponentScan`：自动扫描当前包及其子包中的组件。
+
+## 7.2. 自动配置相关注解
+
+- **`@EnableAutoConfiguration`**：启用 Spring Boot 的自动配置功能，尝试根据项目中的依赖自动配置 Spring 应用。
+- **`@SpringBootConfiguration`**：标识该类为 Spring Boot 的配置类，继承自 `@Configuration`。
+
+## 7.3. 配置属性绑定注解
+
+- **`@ConfigurationProperties`**：用于将配置文件中的属性映射到 Java Bean 中，实现类型安全的配置。
+- **`@EnableConfigurationProperties`**：使 `@ConfigurationProperties` 注解的类生效，并将其注册为 Spring Bean。
+
+## 7.4. 条件化配置注解
+
+- **`@ConditionalOnBean`**：当容器中存在指定的 Bean 时，配置生效。
+- **`@ConditionalOnMissingBean`**：当容器中不存在指定的 Bean 时，配置生效。
+- **`@ConditionalOnClass`**：当类路径中存在指定的类时，配置生效。
+- **`@ConditionalOnMissingClass`**：当类路径中不存在指定的类时，配置生效。
+- **`@ConditionalOnProperty`**：当指定的配置属性有特定值时，配置生效。
+- **`@ConditionalOnExpression`**：当表达式的结果为 true 时，配置生效。
+- **`@ConditionalOnWebApplication`**：当应用是 Web 应用时，配置生效。
+- **`@ConditionalOnNotWebApplication`**：当应用不是 Web 应用时，配置生效。
+
+## 7.5. 自动配置顺序控制注解
+
+- **`@AutoConfigureBefore`**：指定当前配置类在某些配置类之前加载。
+- **`@AutoConfigureAfter`**：指定当前配置类在某些配置类之后加载。
+
+## 7.6. 测试相关注解
+
+**`@SpringBootTest`**：用于测试 Spring Boot 应用，加载完整的应用上下文。
+
+
+
+
+
+
+
+
+
 
 
 
